@@ -1,0 +1,7 @@
+.env
+bin/
+vendor/
+*.test
+*.out
+tmp/
+.air.toml
