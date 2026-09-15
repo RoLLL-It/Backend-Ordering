@@ -5,11 +5,9 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+
+	"github.com/RoLLL-It/Backend-Ordering/internal/http/reqctx"
 )
-
-type contextKey string
-
-const requestIDKey contextKey = "request_id"
 
 // RequestID injects a unique request ID into the context and response header.
 func RequestID(next http.Handler) http.Handler {
@@ -18,7 +16,7 @@ func RequestID(next http.Handler) http.Handler {
 		if id == "" {
 			id = "req_" + uuid.New().String()
 		}
-		ctx := context.WithValue(r.Context(), requestIDKey, id)
+		ctx := reqctx.Set(r.Context(), id)
 		w.Header().Set("X-Request-ID", id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -26,8 +24,5 @@ func RequestID(next http.Handler) http.Handler {
 
 // GetRequestID returns the request ID from context.
 func GetRequestID(ctx context.Context) string {
-	if id, ok := ctx.Value(requestIDKey).(string); ok {
-		return id
-	}
-	return ""
+	return reqctx.Get(ctx)
 }

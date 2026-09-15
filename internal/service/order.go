@@ -6,22 +6,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/RoLLL-It/Backend-Ordering/internal/domain"
-	_ "github.com/RoLLL-It/Backend-Ordering/internal/repo"
+	"github.com/RoLLL-It/Backend-Ordering/internal/repo/iface"
 )
 
 type OrderService struct {
-	db         *pgxpool.Pool
-	orderRepo  *repo.OrderRepo
-	menuRepo   *repo.MenuRepo
-	slotRepo   *repo.SlotRepo
+	db         iface.TxBeginner
+	orderRepo  iface.OrderRepo
+	menuRepo   iface.MenuRepo
+	slotRepo   iface.SlotRepo
 	locRepo    *LocationService
 	settings   *SettingsService
 }
 
-func NewOrderService(db *pgxpool.Pool, or *repo.OrderRepo, mr *repo.MenuRepo, sr *repo.SlotRepo, ls *LocationService, ss *SettingsService) *OrderService {
+func NewOrderService(db iface.TxBeginner, or iface.OrderRepo, mr iface.MenuRepo, sr iface.SlotRepo, ls *LocationService, ss *SettingsService) *OrderService {
 	return &OrderService{db: db, orderRepo: or, menuRepo: mr, slotRepo: sr, locRepo: ls, settings: ss}
 }
 

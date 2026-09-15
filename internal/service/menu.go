@@ -8,11 +8,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/RoLLL-It/Backend-Ordering/internal/domain"
-	"github.com/RoLLL-It/Backend-Ordering/internal/repo"
+	"github.com/RoLLL-It/Backend-Ordering/internal/repo/iface"
 )
 
 type MenuService struct {
-	menuRepo *repo.MenuRepo
+	menuRepo iface.MenuRepo
 	cache    *menuCache
 }
 
@@ -22,7 +22,7 @@ type menuCache struct {
 	expiresAt time.Time
 }
 
-func NewMenuService(mr *repo.MenuRepo) *MenuService {
+func NewMenuService(mr iface.MenuRepo) *MenuService {
 	return &MenuService{menuRepo: mr, cache: &menuCache{}}
 }
 

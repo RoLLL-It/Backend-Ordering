@@ -15,9 +15,12 @@ type S3Client struct {
 	bucket string
 }
 
-func NewS3Client(endpoint, bucket, accessKey, secretKey string) *S3Client {
+func NewS3Client(endpoint, region, bucket, accessKey, secretKey string) *S3Client {
+	if region == "" {
+		region = "us-east-1"
+	}
 	cfg := aws.Config{
-		Region: "us-east-1",
+		Region:      region,
 		Credentials: credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
 		EndpointResolverWithOptions: aws.EndpointResolverWithOptionsFunc(
 			func(service, region string, options ...interface{}) (aws.Endpoint, error) {

@@ -5,3 +5,7 @@ vendor/
 *.out
 tmp/
 .air.toml
+.neon
+.env.local
+node_modules/
+.deployed/

@@ -14,20 +14,20 @@ import (
 
 	"github.com/RoLLL-It/Backend-Ordering/internal/domain"
 	"github.com/RoLLL-It/Backend-Ordering/internal/platform/token"
-	"github.com/RoLLL-It/Backend-Ordering/internal/repo"
+	"github.com/RoLLL-It/Backend-Ordering/internal/repo/iface"
 )
 
 var emailRe = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 var phoneRe = regexp.MustCompile(`^[6-9][0-9]{9}$`)
 
 type AuthService struct {
-	userRepo   *repo.UserRepo
+	userRepo   iface.UserRepo
 	tokenMgr   *token.Manager
 	bcryptCost int
 	refreshTTL time.Duration
 }
 
-func NewAuthService(ur *repo.UserRepo, tm *token.Manager, bcryptCost int, refreshTTL time.Duration) *AuthService {
+func NewAuthService(ur iface.UserRepo, tm *token.Manager, bcryptCost int, refreshTTL time.Duration) *AuthService {
 	return &AuthService{userRepo: ur, tokenMgr: tm, bcryptCost: bcryptCost, refreshTTL: refreshTTL}
 }
 
@@ -115,12 +115,16 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 
 	// Constant-time compare — even if user not found, hash a dummy password
 	// so the response time doesn't leak whether the identifier exists.
-	if errors.Is(err, domain.ErrNotFound) || !u.IsActive {
+	if errors.Is(err, domain.ErrNotFound) {
 		_ = bcrypt.CompareHashAndPassword([]byte("$2a$12$dummyhashfortimingattackmitigation"), []byte(in.Password))
 		return nil, domain.ErrInvalidCredentials
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !u.IsActive {
+		_ = bcrypt.CompareHashAndPassword([]byte("$2a$12$dummyhashfortimingattackmitigation"), []byte(in.Password))
+		return nil, domain.ErrInvalidCredentials
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(in.Password)); err != nil {
 		return nil, domain.ErrInvalidCredentials
@@ -194,9 +198,8 @@ func (s *AuthService) issueTokensWithFamily(ctx context.Context, u *domain.User,
 // --- helpers ---
 
 func normalizePhone(p string) string {
-	// Strip +91, spaces, dashes, then keep 10 digits
+	// Strip +91 or 91 country code prefix (only when total length is 12+ digits)
 	p = strings.TrimPrefix(p, "+91")
-	p = strings.TrimPrefix(p, "91")
 	var out []rune
 	for _, c := range p {
 		if unicode.IsDigit(c) {
@@ -204,8 +207,9 @@ func normalizePhone(p string) string {
 		}
 	}
 	s := string(out)
-	if len(s) > 10 {
-		s = s[len(s)-10:]
+	// Strip leading "91" only when the full number is 12 digits (country code + 10 digit mobile)
+	if len(s) == 12 && strings.HasPrefix(s, "91") {
+		s = s[2:]
 	}
 	return s
 }

@@ -8,15 +8,16 @@ import (
 
 	"github.com/RoLLL-It/Backend-Ordering/internal/domain"
 	"github.com/RoLLL-It/Backend-Ordering/internal/repo"
+	"github.com/RoLLL-It/Backend-Ordering/internal/repo/iface"
 )
 
 type ReviewService struct {
-	reviewRepo *repo.ReviewRepo
-	menuRepo   *repo.MenuRepo
-	orderRepo  *repo.OrderRepo
+	reviewRepo iface.ReviewRepo
+	menuRepo   iface.MenuRepo
+	orderRepo  iface.OrderRepo
 }
 
-func NewReviewService(rr *repo.ReviewRepo, mr *repo.MenuRepo, or *repo.OrderRepo) *ReviewService {
+func NewReviewService(rr iface.ReviewRepo, mr iface.MenuRepo, or iface.OrderRepo) *ReviewService {
 	return &ReviewService{reviewRepo: rr, menuRepo: mr, orderRepo: or}
 }
 

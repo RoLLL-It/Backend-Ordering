@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: rollit-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ACCESS_TTL
+        value: "15m"
+      - key: REFRESH_TTL
+        value: "720h"
+      - key: BCRYPT_COST
+        value: "12"
+      - key: PORT
+        value: "8080"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: AWS_ENDPOINT_URL_S3
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: "us-east-2"
+      - key: S3_BUCKET
+        value: "roll-it"
+      - key: LOG_LEVEL
+        value: "info"
+      - key: ENV
+        value: "production"

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/RoLLL-It/Backend-Ordering/internal/http/middleware"
+	"github.com/RoLLL-It/Backend-Ordering/internal/http/reqctx"
 )
 
 // AppError is the canonical error returned by all handlers.
@@ -36,7 +36,7 @@ func WriteError(w http.ResponseWriter, r *http.Request, err *AppError) {
 		Code:      err.Code,
 		Message:   err.Message,
 		Details:   err.Details,
-		RequestID: middleware.GetRequestID(r.Context()),
+		RequestID: reqctx.Get(r.Context()),
 	}})
 }
 
