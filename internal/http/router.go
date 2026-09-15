@@ -20,6 +20,7 @@ type Handlers struct {
 	Slot      *handler.SlotHandler
 	Review    *handler.ReviewHandler
 	AdminUser *handler.AdminUserHandler
+	Upload    *handler.UploadHandler
 }
 
 func NewRouter(cfg *config.Config, h *Handlers, authMw func(http.Handler) http.Handler) http.Handler {
@@ -85,6 +86,7 @@ func NewRouter(cfg *config.Config, h *Handlers, authMw func(http.Handler) http.H
 			// Menu
 			r.Get("/menu/items", h.Menu.GetMenu) // reuses public but with auth
 			r.With(middleware.AdminOnly).Post("/menu/items", h.Menu.AdminCreateItem)
+			r.With(middleware.AdminOnly).Post("/menu/items/image-upload-url", h.Upload.PresignImageUpload)
 			r.With(middleware.AdminOnly).Patch("/menu/items/{id}", h.Menu.AdminUpdateItem)
 			r.Patch("/menu/items/{id}/availability", h.Menu.AdminSetAvailability)
 			r.With(middleware.AdminOnly).Delete("/menu/items/{id}", h.Menu.AdminDeleteItem)

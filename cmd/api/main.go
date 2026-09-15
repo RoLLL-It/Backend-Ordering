@@ -15,6 +15,7 @@ import (
 	"github.com/RoLLL-It/Backend-Ordering/internal/http/handler"
 	"github.com/RoLLL-It/Backend-Ordering/internal/http/middleware"
 	"github.com/RoLLL-It/Backend-Ordering/internal/platform/db"
+	"github.com/RoLLL-It/Backend-Ordering/internal/platform/storage"
 	"github.com/RoLLL-It/Backend-Ordering/internal/platform/token"
 	"github.com/RoLLL-It/Backend-Ordering/internal/repo"
 	"github.com/RoLLL-It/Backend-Ordering/internal/service"
@@ -45,6 +46,9 @@ func main() {
 	// Token manager
 	tokenMgr := token.NewManager(cfg.JWTSecret, cfg.JWTAccessTTL)
 
+	// Object storage (Neon Object Storage / S3-compatible)
+	s3Client := storage.NewS3Client(cfg.S3Endpoint, cfg.S3Region, cfg.S3Bucket, cfg.S3AccessKey, cfg.S3SecretKey)
+
 	// Repos
 	userRepo := repo.NewUserRepo(pool)
 	menuRepo := repo.NewMenuRepo(pool)
@@ -72,6 +76,7 @@ func main() {
 		Slot:      handler.NewSlotHandler(slotRepo, locationSvc, settingsSvc),
 		Review:    handler.NewReviewHandler(reviewSvc),
 		AdminUser: handler.NewAdminUserHandler(userRepo),
+		Upload:    handler.NewUploadHandler(s3Client, cfg.S3Endpoint),
 	}
 
 	router := apphttp.NewRouter(cfg, handlers, authMw)
