@@ -32,19 +32,3 @@ docker-up: ## Start Postgres + API via docker-compose
 
 docker-db: ## Start only Postgres
 	docker compose up db -d
-
-# DigitalOcean Functions
-deploy: ## Deploy all functions to DigitalOcean (remote build)
-	doctl serverless deploy . --remote-build
-
-deploy-preview: ## Deploy all functions to preview namespace
-	doctl serverless deploy . --remote-build --namespace preview
-
-fn-list: ## List deployed functions
-	doctl serverless functions list
-
-fn-logs: ## Tail activation logs
-	doctl serverless activations logs --last --strip-empty
-
-fn-invoke-health: ## Smoke-test the health check function
-	doctl serverless functions invoke health/check

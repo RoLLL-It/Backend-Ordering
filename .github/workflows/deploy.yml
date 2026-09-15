@@ -1,4 +1,4 @@
-name: CI / Deploy
+name: CI
 
 on:
   push:
@@ -27,25 +27,3 @@ jobs:
 
       - name: Run unit tests
         run: go test ./... -race -count=1 -timeout 60s
-
-  deploy:
-    name: Deploy to DigitalOcean Functions
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Connect to Functions namespace
-        run: doctl serverless connect
-
-      - name: Deploy all functions
-        run: doctl serverless deploy . --remote-build
-
-      - name: Smoke test health function
-        run: doctl serverless functions invoke health/check
