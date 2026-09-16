@@ -14,15 +14,15 @@ import (
 )
 
 type ReviewRow struct {
-	ID           uuid.UUID
-	OrderID      uuid.UUID
-	UserID       uuid.UUID
-	Rating       int16
-	Comment      string
-	IsHidden     bool
-	EditableUntil time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID            uuid.UUID `json:"id"`
+	OrderID       uuid.UUID `json:"order_id"`
+	UserID        uuid.UUID `json:"user_id"`
+	Rating        int16     `json:"rating"`
+	Comment       string    `json:"comment"`
+	IsHidden      bool      `json:"is_hidden"`
+	EditableUntil time.Time `json:"editable_until"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type ReviewRepo struct {
@@ -93,12 +93,12 @@ func (r *ReviewRepo) SetHidden(ctx context.Context, id uuid.UUID, hidden bool) e
 }
 
 type PublicReview struct {
-	ID           uuid.UUID
-	Rating       int16
-	Comment      string
-	ReviewerName string
-	Items        []string
-	CreatedAt    time.Time
+	ID           uuid.UUID `json:"id"`
+	Rating       int16     `json:"rating"`
+	Comment      string    `json:"comment"`
+	ReviewerName string    `json:"reviewer_name"`
+	Items        []string  `json:"items"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 func (r *ReviewRepo) List(ctx context.Context, menuItemID *uuid.UUID, page, pageSize int) ([]PublicReview, int, error) {

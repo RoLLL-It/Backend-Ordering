@@ -147,19 +147,19 @@ func (s *MenuService) ValidateCart(ctx context.Context, items []CartItem, locati
 }
 
 type CartValidation struct {
-	Items            []ValidatedItem
-	SubtotalPaise    int64
-	DeliveryFeePaise int64
-	TotalPaise       int64
-	UnavailableItems []uuid.UUID
-	DeliveryEnabled  bool
+	Items            []ValidatedItem `json:"items"`
+	SubtotalPaise    int64           `json:"subtotal_paise"`
+	DeliveryFeePaise int64           `json:"delivery_fee_paise"`
+	TotalPaise       int64           `json:"total_paise"`
+	UnavailableItems []uuid.UUID     `json:"unavailable_items"`
+	DeliveryEnabled  bool            `json:"delivery_enabled"`
 }
 
 type ValidatedItem struct {
-	MenuItemID     uuid.UUID
-	Name           string
-	PricePaise     int64
-	Quantity       int
-	LineTotalPaise int64
-	IsAvailable    bool
+	MenuItemID     uuid.UUID `json:"menu_item_id"`
+	Name           string    `json:"name"`
+	PricePaise     int64     `json:"price_paise"`
+	Quantity       int       `json:"quantity"`
+	LineTotalPaise int64     `json:"line_total_paise"`
+	IsAvailable    bool      `json:"is_available"`
 }

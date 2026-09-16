@@ -134,6 +134,7 @@ func (r *OrderRepo) attachItems(ctx context.Context, orders []*domain.Order) err
 	ids := make([]uuid.UUID, len(orders))
 	for i, o := range orders {
 		o.Items = []domain.OrderItem{}
+		o.Events = []domain.OrderStatusEvent{}
 		ids[i] = o.ID
 	}
 	rows, err := r.db.Query(ctx,

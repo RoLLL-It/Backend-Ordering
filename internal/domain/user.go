@@ -15,15 +15,15 @@ const (
 )
 
 type User struct {
-	ID           uuid.UUID
-	Name         string
-	Email        string
-	Phone        string
-	PasswordHash string
-	Role         Role
-	IsActive     bool
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           uuid.UUID `json:"id"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	Phone        string    `json:"phone"`
+	PasswordHash string    `json:"-"`
+	Role         Role      `json:"role"`
+	IsActive     bool      `json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 func (u *User) DisplayName() string {

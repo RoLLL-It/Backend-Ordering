@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -66,28 +67,43 @@ const (
 )
 
 type Order struct {
-	ID                uuid.UUID
-	ShortCode         string
-	UserID            uuid.UUID
-	LocationID        uuid.UUID
-	SlotID            uuid.UUID
-	Status            OrderStatus
-	PaymentMode       PaymentMode
-	PaymentStatus     PaymentStatus
-	SubtotalPaise     int64
-	DeliveryFeePaise  int64
-	TotalPaise        int64
-	Notes             string
-	CancelDeadlineAt  time.Time
-	PlacedAt          time.Time
-	DeliveredAt       *time.Time
-	CancelledAt       *time.Time
-	CancelReason      *string
-	UpdatedAt         time.Time
-	Items             []OrderItem
-	Events            []OrderStatusEvent
-	Location          *Location
-	Slot              *DeliverySlot
+	ID               uuid.UUID          `json:"id"`
+	ShortCode        string             `json:"short_code"`
+	UserID           uuid.UUID          `json:"user_id"`
+	LocationID       uuid.UUID          `json:"location_id"`
+	SlotID           uuid.UUID          `json:"slot_id"`
+	Status           OrderStatus        `json:"status"`
+	PaymentMode      PaymentMode        `json:"payment_mode"`
+	PaymentStatus    PaymentStatus      `json:"payment_status"`
+	SubtotalPaise    int64              `json:"subtotal_paise"`
+	DeliveryFeePaise int64              `json:"delivery_fee_paise"`
+	TotalPaise       int64              `json:"total_paise"`
+	Notes            string             `json:"notes"`
+	CancelDeadlineAt time.Time          `json:"cancel_deadline_at"`
+	PlacedAt         time.Time          `json:"placed_at"`
+	DeliveredAt      *time.Time         `json:"delivered_at"`
+	CancelledAt      *time.Time         `json:"cancelled_at"`
+	CancelReason     *string            `json:"cancel_reason"`
+	UpdatedAt        time.Time          `json:"updated_at"`
+	Items            []OrderItem        `json:"items"`
+	Events           []OrderStatusEvent `json:"timeline"`
+	Location         *Location          `json:"location"`
+	Slot             *DeliverySlot      `json:"slot"`
+}
+
+// MarshalJSON includes the computed CanCancel/CanReview flags so every
+// endpoint that returns an Order (list or single) carries them consistently.
+func (o *Order) MarshalJSON() ([]byte, error) {
+	type Alias Order
+	return json.Marshal(&struct {
+		*Alias
+		CanCancel bool `json:"can_cancel"`
+		CanReview bool `json:"can_review"`
+	}{
+		Alias:     (*Alias)(o),
+		CanCancel: o.CanCancel(),
+		CanReview: o.CanReview(),
+	})
 }
 
 func (o *Order) CanCancel() bool {
@@ -99,50 +115,64 @@ func (o *Order) CanReview() bool {
 }
 
 type OrderItem struct {
-	ID                  uuid.UUID
-	OrderID             uuid.UUID
-	MenuItemID          uuid.UUID
-	NameSnapshot        string
-	PriceSnapshotPaise  int64
-	Quantity            int
-	LineTotalPaise      int64
+	ID                 uuid.UUID `json:"id"`
+	OrderID            uuid.UUID `json:"order_id"`
+	MenuItemID         uuid.UUID `json:"menu_item_id"`
+	NameSnapshot       string    `json:"name_snapshot"`
+	PriceSnapshotPaise int64     `json:"price_snapshot_paise"`
+	Quantity           int       `json:"quantity"`
+	LineTotalPaise     int64     `json:"line_total_paise"`
 }
 
 type OrderStatusEvent struct {
-	ID         uuid.UUID
-	OrderID    uuid.UUID
-	FromStatus *OrderStatus
-	ToStatus   OrderStatus
-	ActorID    *uuid.UUID
-	Note       string
-	CreatedAt  time.Time
+	ID         uuid.UUID    `json:"id"`
+	OrderID    uuid.UUID    `json:"order_id"`
+	FromStatus *OrderStatus `json:"from_status"`
+	ToStatus   OrderStatus  `json:"status"`
+	ActorID    *uuid.UUID   `json:"actor_id"`
+	Note       string       `json:"note"`
+	CreatedAt  time.Time    `json:"at"`
 }
 
 type Location struct {
-	ID              uuid.UUID
-	Code            string
-	Name            string
-	DeliveryEnabled bool
-	DeliveryFeePaise int64
-	SortOrder       int
-	CreatedAt       time.Time
+	ID               uuid.UUID `json:"id"`
+	Code             string    `json:"code"`
+	Name             string    `json:"name"`
+	DeliveryEnabled  bool      `json:"delivery_enabled"`
+	DeliveryFeePaise int64     `json:"delivery_fee_paise"`
+	SortOrder        int       `json:"sort_order"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 type DeliverySlot struct {
-	ID            uuid.UUID
-	LocationID    uuid.UUID
-	SlotDate      time.Time
-	StartTime     string // "13:00"
-	EndTime       string // "13:30"
-	Capacity      int
-	BookedCount   int
-	CutoffMinutes int
-	IsActive      bool
-	CreatedAt     time.Time
+	ID            uuid.UUID `json:"id"`
+	LocationID    uuid.UUID `json:"location_id"`
+	SlotDate      time.Time `json:"slot_date"`
+	StartTime     string    `json:"start_time"` // "13:00"
+	EndTime       string    `json:"end_time"`   // "13:30"
+	Capacity      int       `json:"capacity"`
+	BookedCount   int       `json:"booked_count"`
+	CutoffMinutes int       `json:"cutoff_minutes"`
+	IsActive      bool      `json:"is_active"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 func (s *DeliverySlot) SeatsLeft() int {
 	return s.Capacity - s.BookedCount
+}
+
+// MarshalJSON includes the computed SeatsLeft so any endpoint returning a
+// raw DeliverySlot (e.g. admin slot listings) carries it consistently with
+// the customer-facing slot DTO.
+func (s *DeliverySlot) MarshalJSON() ([]byte, error) {
+	type Alias DeliverySlot
+	return json.Marshal(&struct {
+		*Alias
+		SeatsLeft int `json:"seats_left"`
+	}{
+		Alias:     (*Alias)(s),
+		SeatsLeft: s.SeatsLeft(),
+	})
 }
 
 func (s *DeliverySlot) CutoffAt() time.Time {

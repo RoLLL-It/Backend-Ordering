@@ -55,7 +55,7 @@ func (r *MenuRepo) GetFullMenu(ctx context.Context) ([]*domain.Category, error) 
 		}
 		cat, exists := catMap[cid]
 		if !exists {
-			cat = &domain.Category{ID: cid, Name: cName, SortOrder: cSort, Items: []domain.MenuItem{}}
+			cat = &domain.Category{ID: cid, Name: cName, SortOrder: cSort, IsActive: true, Items: []domain.MenuItem{}}
 			catMap[cid] = cat
 			catOrder = append(catOrder, cid)
 		}
