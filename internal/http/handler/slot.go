@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -189,13 +190,27 @@ func (h *SlotHandler) AdminUpdateLocation(w http.ResponseWriter, r *http.Request
 }
 
 func (h *SlotHandler) AdminUpdateSettings(w http.ResponseWriter, r *http.Request) {
-	var body map[string]string
+	// Accept mixed JSON value types (bool, string, number) since settings are
+	// a heterogeneous key/value bag (delivery_enabled: bool, announcement: string, etc).
+	var body map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		errs.WriteError(w, r, errs.Validation(map[string]string{"body": "invalid JSON"}))
 		return
 	}
 	for k, v := range body {
-		if err := h.settings.Set(r.Context(), k, v); err != nil {
+		var strVal string
+		switch val := v.(type) {
+		case bool:
+			strVal = strconv.FormatBool(val)
+		case string:
+			strVal = val
+		case float64:
+			strVal = strconv.FormatFloat(val, 'f', -1, 64)
+		default:
+			errs.WriteError(w, r, errs.Validation(map[string]string{k: "unsupported value type"}))
+			return
+		}
+		if err := h.settings.Set(r.Context(), k, strVal); err != nil {
 			errs.WriteError(w, r, errs.Internal("could not update settings"))
 			return
 		}
