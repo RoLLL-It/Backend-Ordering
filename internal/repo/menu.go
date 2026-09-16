@@ -52,7 +52,7 @@ func (r *MenuRepo) GetFullMenu(ctx context.Context) ([]*domain.Category, error) 
 		}
 		cat, exists := catMap[cid]
 		if !exists {
-			cat = &domain.Category{ID: cid, Name: cName, SortOrder: cSort}
+			cat = &domain.Category{ID: cid, Name: cName, SortOrder: cSort, Items: []domain.MenuItem{}}
 			catMap[cid] = cat
 			catOrder = append(catOrder, cid)
 		}
@@ -96,7 +96,7 @@ func (r *MenuRepo) GetManyByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*domain.MenuItem
+	items := []*domain.MenuItem{}
 	for rows.Next() {
 		mi := &domain.MenuItem{}
 		if err := rows.Scan(&mi.ID, &mi.CategoryID, &mi.Name, &mi.Description, &mi.PricePaise, &mi.ImageURL,
@@ -116,7 +116,7 @@ func (r *MenuRepo) GetManyByIDsTx(ctx context.Context, tx pgx.Tx, ids []uuid.UUI
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*domain.MenuItem
+	items := []*domain.MenuItem{}
 	for rows.Next() {
 		mi := &domain.MenuItem{}
 		if err := rows.Scan(&mi.ID, &mi.CategoryID, &mi.Name, &mi.PricePaise, &mi.IsAvailable, &mi.IsActive); err != nil {
@@ -176,7 +176,7 @@ func (r *MenuRepo) GetCategories(ctx context.Context) ([]*domain.Category, error
 		return nil, err
 	}
 	defer rows.Close()
-	var cats []*domain.Category
+	cats := []*domain.Category{}
 	for rows.Next() {
 		c := &domain.Category{}
 		if err := rows.Scan(&c.ID, &c.Name, &c.SortOrder, &c.IsActive, &c.CreatedAt); err != nil {

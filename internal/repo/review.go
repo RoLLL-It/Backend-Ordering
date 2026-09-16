@@ -116,7 +116,7 @@ func (r *ReviewRepo) List(ctx context.Context, menuItemID *uuid.UUID, page, page
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var reviews []PublicReview
+	reviews := []PublicReview{}
 	for rows.Next() {
 		pr := PublicReview{}
 		var fullName string

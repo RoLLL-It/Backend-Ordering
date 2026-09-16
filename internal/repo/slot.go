@@ -74,7 +74,7 @@ func (r *SlotRepo) ListByLocationAndDate(ctx context.Context, locationID uuid.UU
 		return nil, err
 	}
 	defer rows.Close()
-	var slots []*domain.DeliverySlot
+	slots := []*domain.DeliverySlot{}
 	for rows.Next() {
 		var startStr, endStr string
 		s := &domain.DeliverySlot{}
@@ -114,7 +114,7 @@ func (r *SlotRepo) ListForAdmin(ctx context.Context, date time.Time) ([]*domain.
 		return nil, err
 	}
 	defer rows.Close()
-	var slots []*domain.DeliverySlot
+	slots := []*domain.DeliverySlot{}
 	for rows.Next() {
 		var startStr, endStr string
 		s := &domain.DeliverySlot{}

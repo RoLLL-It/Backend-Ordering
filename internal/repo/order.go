@@ -113,7 +113,7 @@ func (r *OrderRepo) getItems(ctx context.Context, orderID uuid.UUID) ([]domain.O
 		return nil, err
 	}
 	defer rows.Close()
-	var items []domain.OrderItem
+	items := []domain.OrderItem{}
 	for rows.Next() {
 		it := domain.OrderItem{}
 		if err := rows.Scan(&it.ID, &it.OrderID, &it.MenuItemID, &it.NameSnapshot,
@@ -125,6 +125,41 @@ func (r *OrderRepo) getItems(ctx context.Context, orderID uuid.UUID) ([]domain.O
 	return items, nil
 }
 
+// attachItems batch-fetches order_items for all given orders in one query
+// and attaches them to each order's Items field (avoids N+1 queries).
+func (r *OrderRepo) attachItems(ctx context.Context, orders []*domain.Order) error {
+	if len(orders) == 0 {
+		return nil
+	}
+	ids := make([]uuid.UUID, len(orders))
+	for i, o := range orders {
+		o.Items = []domain.OrderItem{}
+		ids[i] = o.ID
+	}
+	rows, err := r.db.Query(ctx,
+		`SELECT id,order_id,menu_item_id,name_snapshot,price_snapshot_paise,quantity,line_total_paise
+		 FROM order_items WHERE order_id=ANY($1)`, ids)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	byOrder := make(map[uuid.UUID][]domain.OrderItem, len(orders))
+	for rows.Next() {
+		it := domain.OrderItem{}
+		if err := rows.Scan(&it.ID, &it.OrderID, &it.MenuItemID, &it.NameSnapshot,
+			&it.PriceSnapshotPaise, &it.Quantity, &it.LineTotalPaise); err != nil {
+			return err
+		}
+		byOrder[it.OrderID] = append(byOrder[it.OrderID], it)
+	}
+	for _, o := range orders {
+		if items, ok := byOrder[o.ID]; ok {
+			o.Items = items
+		}
+	}
+	return nil
+}
+
 func (r *OrderRepo) getEvents(ctx context.Context, orderID uuid.UUID) ([]domain.OrderStatusEvent, error) {
 	rows, err := r.db.Query(ctx,
 		`SELECT id,order_id,from_status,to_status,actor_id,note,created_at
@@ -133,7 +168,7 @@ func (r *OrderRepo) getEvents(ctx context.Context, orderID uuid.UUID) ([]domain.
 		return nil, err
 	}
 	defer rows.Close()
-	var events []domain.OrderStatusEvent
+	events := []domain.OrderStatusEvent{}
 	for rows.Next() {
 		e := domain.OrderStatusEvent{}
 		if err := rows.Scan(&e.ID, &e.OrderID, &e.FromStatus, &e.ToStatus, &e.ActorID, &e.Note, &e.CreatedAt); err != nil {
@@ -159,7 +194,7 @@ func (r *OrderRepo) ListByUser(ctx context.Context, userID uuid.UUID, activeOnly
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var orders []*domain.Order
+	orders := []*domain.Order{}
 	for rows.Next() {
 		o := &domain.Order{}
 		if err := rows.Scan(&o.ID, &o.ShortCode, &o.UserID, &o.LocationID, &o.SlotID, &o.Status,
@@ -168,6 +203,9 @@ func (r *OrderRepo) ListByUser(ctx context.Context, userID uuid.UUID, activeOnly
 			return nil, 0, err
 		}
 		orders = append(orders, o)
+	}
+	if err := r.attachItems(ctx, orders); err != nil {
+		return nil, 0, err
 	}
 	var total int
 	_ = r.db.QueryRow(ctx, `SELECT COUNT(*) FROM orders WHERE user_id=$1`+filter, args[:1]...).Scan(&total)
@@ -228,7 +266,7 @@ func (r *OrderRepo) AdminList(ctx context.Context, status *domain.OrderStatus, d
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var orders []*domain.Order
+	orders := []*domain.Order{}
 	for rows.Next() {
 		o := &domain.Order{}
 		if err := rows.Scan(&o.ID, &o.ShortCode, &o.UserID, &o.LocationID, &o.SlotID, &o.Status,
@@ -237,6 +275,9 @@ func (r *OrderRepo) AdminList(ctx context.Context, status *domain.OrderStatus, d
 			return nil, 0, err
 		}
 		orders = append(orders, o)
+	}
+	if err := r.attachItems(ctx, orders); err != nil {
+		return nil, 0, err
 	}
 	var total int
 	countArgs := args[:len(args)-2]

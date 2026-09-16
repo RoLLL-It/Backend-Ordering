@@ -93,7 +93,7 @@ func (r *UserRepo) List(ctx context.Context, search string, role *domain.Role, p
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var users []*domain.User
+	users := []*domain.User{}
 	for rows.Next() {
 		u := &domain.User{}
 		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.PasswordHash,
