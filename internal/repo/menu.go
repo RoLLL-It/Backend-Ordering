@@ -35,15 +35,18 @@ func (r *MenuRepo) GetFullMenu(ctx context.Context) ([]*domain.Category, error) 
 	var catOrder []uuid.UUID
 	for rows.Next() {
 		var (
-			cid, mID uuid.UUID
-			cName    string
-			cSort    int
-			mName, mDesc string
-			mPrice   int64
-			mImgURL  *string
-			mVeg, mAvail, mActive bool
-			mRatingAvg float64
-			mRatingCnt, mSort int
+			cid   uuid.UUID
+			cName string
+			cSort int
+			// LEFT JOIN produces NULL for every mi.* column when a category has
+			// zero active items — all item columns must be nullable scan targets.
+			mID                    *uuid.UUID
+			mName, mDesc           *string
+			mPrice                 *int64
+			mImgURL                *string
+			mVeg, mAvail, mActive  *bool
+			mRatingAvg             *float64
+			mRatingCnt, mSort      *int
 		)
 		if err := rows.Scan(&cid, &cName, &cSort,
 			&mID, &mName, &mDesc, &mPrice, &mImgURL,
@@ -56,13 +59,13 @@ func (r *MenuRepo) GetFullMenu(ctx context.Context) ([]*domain.Category, error) 
 			catMap[cid] = cat
 			catOrder = append(catOrder, cid)
 		}
-		// LEFT JOIN may produce null item row if no items
-		if mID != uuid.Nil {
+		// LEFT JOIN produces a null item row if the category has no items
+		if mID != nil {
 			cat.Items = append(cat.Items, domain.MenuItem{
-				ID: mID, CategoryID: cid, Name: mName, Description: mDesc,
-				PricePaise: mPrice, ImageURL: mImgURL, IsVeg: mVeg,
-				IsAvailable: mAvail, IsActive: mActive,
-				RatingAvg: mRatingAvg, RatingCount: mRatingCnt, SortOrder: mSort,
+				ID: *mID, CategoryID: cid, Name: *mName, Description: *mDesc,
+				PricePaise: *mPrice, ImageURL: mImgURL, IsVeg: *mVeg,
+				IsAvailable: *mAvail, IsActive: *mActive,
+				RatingAvg: *mRatingAvg, RatingCount: *mRatingCnt, SortOrder: *mSort,
 			})
 		}
 	}
