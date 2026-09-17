@@ -62,12 +62,13 @@ func (h *MenuHandler) GetItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandler) AdminCreateItem(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		CategoryID  string `json:"category_id"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		PricePaise  int64  `json:"price_paise"`
-		IsVeg       bool   `json:"is_veg"`
-		SortOrder   int    `json:"sort_order"`
+		CategoryID  string  `json:"category_id"`
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		PricePaise  int64   `json:"price_paise"`
+		ImageURL    *string `json:"image_url"`
+		IsVeg       bool    `json:"is_veg"`
+		SortOrder   int     `json:"sort_order"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		errs.WriteError(w, r, errs.Validation(map[string]string{"body": "invalid JSON"}))
@@ -80,7 +81,7 @@ func (h *MenuHandler) AdminCreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 	mi := &domain.MenuItem{
 		CategoryID: catID, Name: body.Name, Description: body.Description,
-		PricePaise: body.PricePaise, IsVeg: body.IsVeg, IsAvailable: true, IsActive: true,
+		PricePaise: body.PricePaise, ImageURL: body.ImageURL, IsVeg: body.IsVeg, IsAvailable: true, IsActive: true,
 		SortOrder: body.SortOrder,
 	}
 	if err := h.svc.CreateItem(r.Context(), mi); err != nil {
@@ -97,18 +98,58 @@ func (h *MenuHandler) AdminUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		PricePaise  int64  `json:"price_paise"`
-		IsVeg       bool   `json:"is_veg"`
-		SortOrder   int    `json:"sort_order"`
+		CategoryID  *string `json:"category_id"`
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+		PricePaise  *int64  `json:"price_paise"`
+		ImageURL    *string `json:"image_url"`
+		IsVeg       *bool   `json:"is_veg"`
+		SortOrder   *int    `json:"sort_order"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		errs.WriteError(w, r, errs.Validation(map[string]string{"body": "invalid JSON"}))
 		return
 	}
-	mi := &domain.MenuItem{ID: id, Name: body.Name, Description: body.Description,
-		PricePaise: body.PricePaise, IsVeg: body.IsVeg, SortOrder: body.SortOrder}
+
+	// Fetch the existing item first — a partial update must not clobber fields
+	// (category_id, image_url) the client didn't send.
+	mi, err := h.svc.GetItem(r.Context(), id)
+	if errors.Is(err, domain.ErrNotFound) {
+		errs.WriteError(w, r, errs.NotFound("item"))
+		return
+	}
+	if err != nil {
+		errs.WriteError(w, r, errs.Internal("could not load item"))
+		return
+	}
+
+	if body.CategoryID != nil {
+		catID, err := uuid.Parse(*body.CategoryID)
+		if err != nil {
+			errs.WriteError(w, r, errs.Validation(map[string]string{"category_id": "invalid UUID"}))
+			return
+		}
+		mi.CategoryID = catID
+	}
+	if body.Name != nil {
+		mi.Name = *body.Name
+	}
+	if body.Description != nil {
+		mi.Description = *body.Description
+	}
+	if body.PricePaise != nil {
+		mi.PricePaise = *body.PricePaise
+	}
+	if body.ImageURL != nil {
+		mi.ImageURL = body.ImageURL
+	}
+	if body.IsVeg != nil {
+		mi.IsVeg = *body.IsVeg
+	}
+	if body.SortOrder != nil {
+		mi.SortOrder = *body.SortOrder
+	}
+
 	if err := h.svc.UpdateItem(r.Context(), mi); err != nil {
 		errs.WriteError(w, r, errs.Internal("could not update item"))
 		return
